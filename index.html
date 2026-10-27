@@ -27,6 +27,14 @@
     --card: #18181a;
     --field: #0b0b0c;
     --line: rgba(255,255,255,.09);
+    /* Glass pill bars (genre switcher, "What's this about?") */
+    --glass-bg: rgba(255,255,255,.045); --glass-edge: rgba(255,255,255,.17); --glass-hi: rgba(255,255,255,.10);
+    --glass-drop: rgba(0,0,0,.45);
+    --lens-hi: rgba(255,255,255,.10); --lens-lo: rgba(255,255,255,.018);
+    --lens-rim: rgba(255,255,255,.45); --lens-shade: rgba(0,0,0,.38);
+    --lens-lift-hi: rgba(255,255,255,.28); --lens-lift-lo: rgba(255,255,255,.07); --lens-ring: rgba(255,255,255,.24);
+    --lens-base: rgba(30,30,33,.84);  /* frosted tint so labels under the lens don't show through */
+    --spring: cubic-bezier(.34, 1.36, .64, 1);
     --mono: "JetBrains Mono", ui-monospace, monospace;    --gutter: clamp(16px, 4vw, 48px);
     --ease: cubic-bezier(.22, .8, .2, 1);
   }
@@ -43,6 +51,12 @@
     --card: #efefec;
     --field: #f8f8f6;
     --line: rgba(0,0,0,.1);
+    --glass-bg: rgba(255,255,255,.55); --glass-edge: rgba(0,0,0,.07); --glass-hi: rgba(255,255,255,.9);
+    --glass-drop: rgba(0,0,0,.12);
+    --lens-hi: rgba(255,255,255,.95); --lens-lo: rgba(255,255,255,.45);
+    --lens-rim: rgba(255,255,255,1); --lens-shade: rgba(0,0,0,.14);
+    --lens-lift-hi: rgba(255,255,255,.98); --lens-lift-lo: rgba(255,255,255,.6); --lens-ring: rgba(255,255,255,1);
+    --lens-base: rgba(246,246,243,.86);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -206,7 +220,6 @@
   }
   .genre-bar .topics {
     margin-top: 0; pointer-events: auto; flex-wrap: nowrap; max-width: 100%;
-    box-shadow: 0 12px 32px rgba(0,0,0,.28);
     transition: background .5s var(--ease), border-color .5s var(--ease);
   }
   .genre-bar .topics button { flex: none; white-space: nowrap; }
@@ -312,6 +325,81 @@
     color: var(--accent); font-weight: 600;
     background: var(--card); box-shadow: inset 0 0 0 1px var(--line), 0 1px 6px rgba(0,0,0,.25);
   }
+
+  /* ---------- Glass pill bars ----------
+     The bar is frosted glass; the selected option sits under a glass "lens" that slides (and can be
+     dragged) between options. The lens blurs what is under it and shows the label slightly magnified
+     in the accent color, like looking through a droplet. */
+  .topics.glass {
+    position: relative; isolation: isolate;
+    /* Corner roundness = half an option's height + padding + border: a one-line bar is a pill, and a bar that
+       wraps onto several lines becomes a rounded rectangle whose corners still fit the lens */
+    border-radius: calc(var(--row-h, 40px) / 2 + 6px);
+    -webkit-user-select: none; user-select: none;  /* dragging the lens shouldn't highlight the labels */
+    background: var(--glass-bg); border-color: var(--glass-edge);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+    box-shadow: inset 0 1px 0 var(--glass-hi), 0 12px 32px var(--glass-drop), 0 2px 6px var(--glass-drop);
+    transition: background .5s var(--ease), border-color .5s var(--ease), box-shadow .5s var(--ease);
+  }
+  .topics.glass button,
+  .topics.glass button[aria-pressed="true"] {
+    position: relative; z-index: 1;
+    background: none; box-shadow: none; text-shadow: none; color: var(--muted); font-weight: 400;
+    transition: color .2s var(--ease);
+  }
+  /* Once the lens has arrived, hide the plain label under it so only the magnified one shows */
+  .topics.glass button[aria-pressed="true"] { color: transparent; transition: color .2s var(--ease) .35s; }
+  /* While the lens is picked up it can leave the selected option, so show that label again */
+  .topics.glass.lens-lifted button[aria-pressed="true"] { color: var(--muted); transition: color .15s var(--ease); }
+  .glass-lens {
+    position: absolute; left: 0; top: 0; z-index: 2;
+    border-radius: 999px; overflow: hidden; cursor: grab; touch-action: none;
+    background: radial-gradient(130% 100% at 50% -10%, var(--lens-hi), var(--lens-lo) 58%, var(--lens-lo)), var(--lens-base);
+    -webkit-backdrop-filter: blur(8px) saturate(1.6); backdrop-filter: blur(8px) saturate(1.6);
+    box-shadow:
+      inset 0 -12px 18px -14px var(--lens-shade),  /* darker underside, like a curved droplet */
+      inset 0 10px 14px -14px var(--lens-rim),     /* bright rim along the top */
+      0 12px 28px var(--glass-drop), 0 2px 6px var(--glass-drop);
+    transition: transform .6s var(--spring), width .5s var(--spring), height .5s var(--spring), scale .3s var(--ease),
+                background .25s var(--ease), box-shadow .25s var(--ease);
+    will-change: transform;
+  }
+  .glass-lens.moving { scale: 1.07 .93; }  /* a little squash while it travels after a click */
+  /* Pressed / dragged: the lens lifts off the bar like a picked-up droplet: bigger, milkier, brighter
+     rim, a faint accent glow, and stronger magnification. It keeps one size and glides freely. */
+  .glass-lens.lifted {
+    background: radial-gradient(130% 100% at 50% -10%, var(--lens-lift-hi), var(--lens-lift-lo) 62%, var(--lens-lift-lo)), var(--lens-base);
+    -webkit-backdrop-filter: blur(8px) saturate(1.8) brightness(1.12); backdrop-filter: blur(8px) saturate(1.8) brightness(1.12);
+    box-shadow:
+      inset 0 -14px 20px -14px var(--lens-shade),
+      inset 0 12px 16px -12px var(--lens-rim),
+      inset 0 0 0 1px var(--lens-ring),
+      0 18px 40px var(--glass-drop),
+      0 0 26px color-mix(in srgb, var(--accent) 22%, transparent);
+    transition: transform .35s var(--spring), width .35s var(--spring), height .35s var(--spring),
+                background .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .glass-lens.dragging {
+    cursor: grabbing;
+    transition: width .35s var(--spring), height .35s var(--spring), background .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .glass-lens.no-anim, .glass-lens.no-anim .lens-content { transition: none; }
+  .lens-content {
+    position: absolute; pointer-events: none; transform: scale(1.06);
+    transition: left .6s var(--spring), top .6s var(--spring), transform-origin .6s var(--spring), transform .35s var(--spring);
+  }
+  .glass-lens.lifted .lens-content {
+    transform: scale(1.12);
+    transition: left .35s var(--spring), top .35s var(--spring), transform-origin .35s var(--spring), transform .35s var(--spring);
+  }
+  .glass-lens.dragging .lens-content { transition: transform .35s var(--spring); }
+  .lens-content span {
+    position: absolute; display: flex; align-items: center; justify-content: center;
+    white-space: nowrap; color: var(--accent); font-weight: 600;
+  }
+  :root:not([data-theme="light"]) .lens-content span {
+    text-shadow: 0 0 8px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
   .fields { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px 18px; }
   .fields .full { grid-column: 1 / -1; }
   .fields .label { margin-bottom: 12px; }
@@ -333,8 +421,6 @@
     background: var(--fg); color: var(--bg); transition: transform .3s var(--ease), gap .3s var(--ease);
   }
   .send:hover { transform: translateY(-2px); gap: 14px; }
-  .fineprint { margin-top: 22px; font-size: 13.5px; line-height: 1.6; color: var(--muted); }
-  .fineprint a { color: var(--accent); }
 
   .contact-info > * + * { margin-top: 56px; }
   .direct .mail {
@@ -345,7 +431,7 @@
   }
   .direct .mail:hover { background-size: 100% 1.5px; }
   /* Soft neon glow on the accent text, dark theme only */
-  :root:not([data-theme="light"]) :is(.direct .mail, .status, .topics button[aria-pressed="true"], .fineprint a) {
+  :root:not([data-theme="light"]) :is(.direct .mail, .status) {
     text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
   }
   .direct .city { margin-top: 12px; font-size: 16px; }
@@ -536,10 +622,6 @@
           </div>
 
           <button class="send" type="submit">Compose email <span aria-hidden="true">&#8594;</span></button>
-          <p class="fineprint">
-            This opens Gmail with your message ready to send. Nothing is stored on this site.
-            Rather use your own mail app? <a id="mailto-link"></a>
-          </p>
         </form>
 
         <aside class="contact-info">
@@ -628,7 +710,8 @@ const SITE = {
     { src: "photos/04.jpg", title: "Vulture",           client: "Wildlife", col: "5 / 12",  colM: "2 / 7", ratio: "16/9",      mt: "10vh", speed: 0.02 },
     { src: "photos/15.jpg", title: "Lion-tailed Macaque", client: "Wildlife", col: "2 / 5", colM: "1 / 5", ratio: "2/3",       mt: "0",    speed: 0.05 },
     { src: "photos/01.jpg", title: "In the Grass",      client: "Wildlife", col: "6 / 13",  colM: "1 / 7", ratio: "16/9",      mt: "12vh", speed: 0.02 },
-    { src: "photos/20.jpg", title: "Tree Snake",        client: "Wildlife", col: "5 / 8",   colM: "3 / 7", ratio: "2/3",       mt: "0",    speed: 0.04 },
+    { src: "photos/20.jpg", title: "Tree Snake",        client: "Wildlife", col: "2 / 5",   colM: "3 / 7", ratio: "2/3",       mt: "0",    speed: 0.04 },
+    { src: "photos/24.jpg", title: "Last Light",        client: "Wildlife", col: "6 / 13",  colM: "1 / 7", ratio: "1800/1153", mt: "10vh", speed: 0.02 },
   ] },
   /* Fixed order, best photos first. Each line is one row on desktop (two photos side by side). */
   { id: "automobile", label: "Automobile", auto: [
@@ -691,8 +774,6 @@ const gmailCompose = (subject = "", body = "") =>
 
 $("#mail").textContent = SITE.email;
 $("#mail").href = gmailCompose();
-$("#mailto-link").textContent = SITE.email;
-$("#mailto-link").href = `mailto:${SITE.email}`;
 $("#city").textContent = SITE.location;
 $("#status").textContent = SITE.status;
 
@@ -706,6 +787,107 @@ $("#socials").innerHTML = SITE.socials.map(s => `
     ${ICONS[s.icon]}<span class="handle">${s.handle}</span>
   </a></li>`).join("");
 
+/* ---------- Glass pill bars ----------
+   Turns a bar of aria-pressed buttons into frosted glass with a sliding glass lens over the selected
+   option. The lens follows aria-pressed (so the bar's own click handler stays in charge), and it can be
+   dragged: on release it snaps to the nearest option and clicks it. */
+function glassify(bar, { contain = false } = {}) {  // contain: keep the lifted lens inside the bar's edges
+  bar.classList.add("glass");
+  const lens = document.createElement("div");
+  lens.className = "glass-lens";
+  lens.setAttribute("aria-hidden", "true");
+  const content = document.createElement("div");
+  content.className = "lens-content";
+  lens.append(content);
+  bar.append(lens);
+
+  const buttons = () => [...bar.querySelectorAll("button")];
+  let pos = { x: 0, y: 0, w: 0, h: 0 };
+
+  // Accent copies of every label, laid out exactly like the real buttons; the lens shows them magnified
+  function layoutLabels() {
+    content.style.width = bar.scrollWidth + "px";
+    content.style.height = bar.scrollHeight + "px";
+    content.innerHTML = buttons().map(b =>
+      `<span style="left:${b.offsetLeft}px;top:${b.offsetTop}px;width:${b.offsetWidth}px;height:${b.offsetHeight}px;font-size:${getComputedStyle(b).fontSize}">${b.textContent}</span>`).join("");
+  }
+  function place(x, y, w, h) {
+    pos = { x, y, w, h };
+    lens.style.transform = `translate(${x}px, ${y}px)`;
+    lens.style.width = w + "px";
+    lens.style.height = h + "px";
+    content.style.left = -x + "px";
+    content.style.top = -y + "px";
+    content.style.transformOrigin = `${x + w / 2}px ${y + h / 2}px`;
+  }
+  function toActive(animate = true) {
+    const b = bar.querySelector('[aria-pressed="true"]');
+    if (!b) return;
+    if (!animate) lens.classList.add("no-anim");
+    place(b.offsetLeft, b.offsetTop, b.offsetWidth, b.offsetHeight);
+    if (!animate) { void lens.offsetWidth; lens.classList.remove("no-anim"); return; }
+    lens.classList.add("moving");
+    clearTimeout(lens.squash);
+    lens.squash = setTimeout(() => lens.classList.remove("moving"), 260);
+  }
+  const nearest = (cx, cy) => buttons().reduce((best, b) => {
+    const d = Math.hypot(b.offsetLeft + b.offsetWidth / 2 - cx, b.offsetTop + b.offsetHeight / 2 - cy);
+    return d < best.d ? { b, d } : best;
+  }, { b: null, d: Infinity }).b;
+
+  const refresh = () => {
+    bar.style.setProperty("--row-h", buttons()[0].offsetHeight + "px");
+    layoutLabels();
+    toActive(false);
+  };
+  // For a contained bar: nudge a lens rect (centered at cx, cy) so it stays clear of the bar's edges
+  const keepInside = (cx, cy, w, h) => contain ? [
+    Math.min(Math.max(cx, w / 2 + 3), bar.clientWidth - w / 2 - 3),
+    Math.min(Math.max(cy, h / 2 + 2), bar.clientHeight - h / 2 - 2),
+  ] : [cx, cy];
+  refresh();
+  document.fonts.ready.then(refresh);
+  new ResizeObserver(refresh).observe(bar);
+  new MutationObserver(() => toActive()).observe(bar, { subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+
+  // Pressing lifts the lens: it grows (bulging past the bar where there's room) and then glides at that
+  // one size, centered under the finger, until it's let go.
+  let drag = null;
+  lens.addEventListener("pointerdown", e => {
+    e.preventDefault();  // a mouse drag would otherwise start selecting text across the page
+    const cx = pos.x + pos.w / 2, cy = pos.y + pos.h / 2;
+    const scrolls = bar.scrollWidth > bar.clientWidth + 1;  // a sideways-scrolling bar would clip a tall lens
+    const w = contain ? Math.min(pos.w * 1.06 + 8, bar.clientWidth - 6) : pos.w * 1.12 + 14;
+    const h = pos.h * (contain || scrolls ? 1.08 : 1.45);
+    drag = { sx: e.clientX, sy: e.clientY, cx, cy, w, h };
+    lens.setPointerCapture(e.pointerId);
+    lens.classList.add("lifted");  // grows smoothly around its center
+    bar.classList.add("lens-lifted");
+    const [x, y] = keepInside(cx, cy, w, h);
+    place(x - w / 2, y - h / 2, w, h);
+  });
+  lens.addEventListener("pointermove", e => {
+    if (!drag) return;
+    if (Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) > 2) lens.classList.add("dragging");  // now follow the finger instantly
+    const centers = buttons().map(b => [b.offsetLeft + b.offsetWidth / 2, b.offsetTop + b.offsetHeight / 2]);
+    const cx = Math.min(Math.max(drag.cx + e.clientX - drag.sx, Math.min(...centers.map(c => c[0]))), Math.max(...centers.map(c => c[0])));
+    const cy = Math.min(Math.max(drag.cy + e.clientY - drag.sy, Math.min(...centers.map(c => c[1]))), Math.max(...centers.map(c => c[1])));
+    const [x, y] = keepInside(cx, cy, drag.w, drag.h);
+    place(x - drag.w / 2, y - drag.h / 2, drag.w, drag.h);
+  });
+  const release = () => {
+    if (!drag) return;
+    drag = null;
+    lens.classList.remove("dragging", "lifted");
+    bar.classList.remove("lens-lifted");
+    const target = nearest(pos.x + pos.w / 2, pos.y + pos.h / 2);
+    if (target && target.getAttribute("aria-pressed") !== "true") target.click();
+    setTimeout(() => toActive(), 0);  // snap home if the click didn't change the selection
+  };
+  lens.addEventListener("pointerup", release);
+  lens.addEventListener("pointercancel", release);
+}
+
 const form = $("#contact-form");
 let topic = SITE.topics[0];
 $("#topics").innerHTML = SITE.topics.map((t, i) =>
@@ -718,6 +900,7 @@ $("#topics").addEventListener("click", e => {
   $("#topics").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
   $("#message").placeholder = topic.hint;
 });
+glassify($("#topics"), { contain: true });
 form.addEventListener("submit", e => {
   e.preventDefault();
   const invalid = [...form.querySelectorAll("[required]")].find(f => !f.checkValidity());
@@ -823,6 +1006,7 @@ genreBar.addEventListener("click", e => {
   const b = e.target.closest("button");
   if (b) selectGenre(b.dataset.genre);
 });
+glassify(genreBar);
 renderGallery(GENRES[0]);
 
 // The genre tags in the About section jump to that genre in the gallery
