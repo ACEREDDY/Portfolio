@@ -13,6 +13,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* Dune Rise by Fontswan, SIL Open Font License 1.1 (see fonts/Dune_Rise-OFL.txt) */
+  @font-face {
+    font-family: "Dune Rise";
+    src: url(fonts/Dune_Rise.ttf) format("truetype");
+    font-display: swap;
+  }
+
   /* ---------- Theme ---------- */
   :root {
     --bg: #0f0f10;
@@ -99,8 +106,8 @@
 
   .logo-small {
     position: fixed; top: 34px; left: var(--gutter); z-index: 60;
-    font-family: "Syne", sans-serif; font-weight: 800; font-size: 15px;
-    letter-spacing: .02em; text-transform: uppercase;
+    font-family: "Dune Rise", "Syne", sans-serif; font-weight: 400; font-size: 17px; line-height: 1;
+    letter-spacing: .08em; text-transform: uppercase;
     mix-blend-mode: difference; color: #fff;
     opacity: 0; transition: opacity .4s var(--ease);
   }
