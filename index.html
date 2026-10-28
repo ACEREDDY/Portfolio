@@ -105,11 +105,16 @@
   :root[data-theme="light"] .theme-btn svg { transform: rotate(180deg); }
 
   .logo-small {
-    position: fixed; top: 34px; left: var(--gutter); z-index: 60;
+    position: fixed; top: 30px; left: var(--gutter); z-index: 60;
     font-family: "Dune Rise", "Syne", sans-serif; font-weight: 400; font-size: 17px; line-height: 1;
     letter-spacing: .08em; text-transform: uppercase;
     mix-blend-mode: difference; color: #fff;
     opacity: 0; transition: opacity .4s var(--ease);
+  }
+  /* Small "STUDIOS" line centered under the name, like the favicon */
+  .logo-small .studios {
+    display: block; margin-top: 6px; text-align: center;
+    font-size: 8px; letter-spacing: .7em; padding-left: .7em;  /* the padding re-centers the trailing space */
   }
   body.scrolled .logo-small { opacity: 1; }
 
@@ -538,7 +543,7 @@
     .fields { grid-template-columns: 1fr; }
     .topics { border-radius: 20px; }
     .menu-btn { top: 14px; }
-    .logo-small { top: 26px; }
+    .logo-small { top: 21px; }
     .theme-btn { bottom: 14px; }
   }
 
@@ -764,7 +769,7 @@ document.title = `${fullName} Studios`;
 
 $("#wordmark").innerHTML =
   `<span class="line"><span>${SITE.firstName}</span></span><span class="line"><span>${SITE.lastName}</span></span>`;
-$(".logo-small").textContent = fullName;
+$(".logo-small").innerHTML = `${fullName}<span class="studios">Studios</span>`;
 $("#statement").textContent = SITE.statement;
 $("#statement-about").textContent = SITE.statement;
 $("#about-text").textContent = SITE.about;
