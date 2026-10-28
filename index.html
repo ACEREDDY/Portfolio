@@ -195,6 +195,8 @@
     -webkit-background-clip: text; background-clip: text;
   }
   .wordmark h1 .line:nth-child(2) > span { background-position: 20% 0; }  /* a different stretch of forest */
+  /* The name turning to dust: drawn on this canvas while scrolling; the real text is shown at rest */
+  .dissolve { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
   /* Tall screens (phones, portrait tablets): face on top, name underneath */
   @media (max-aspect-ratio: 3/2) {
     .wordmark { align-items: end; padding-bottom: 13vh; padding-bottom: 13svh; }
@@ -701,6 +703,9 @@ const SITE = {
     { label: "Something else",    hint: "Say hello — tell me what’s on your mind." },
   ],
   socials: [
+    // WhatsApp opens a chat with a first message already typed in
+    { label: "WhatsApp",  icon: "whatsapp",  handle: "+91 76748 75775",        href: "https://wa.me/917674875775?text=" +
+        encodeURIComponent("Hi Keshav, I saw your portfolio and would like to talk about a shoot.") },
     { label: "Instagram", icon: "instagram", handle: "keshav_ofalltrades",     href: "https://www.instagram.com/keshav_ofalltrades/" },
     { label: "YouTube",   icon: "youtube",   handle: "@chennakesavareddy4745", href: "https://www.youtube.com/@chennakesavareddy4745" },
     { label: "LinkedIn",  icon: "linkedin",  handle: "in/chenna-kesava-reddy", href: "https://www.linkedin.com/in/chenna-kesava-reddy-8ab305270/" },
@@ -849,6 +854,7 @@ $("#city").textContent = SITE.location;
 $("#status").textContent = SITE.status;
 
 const ICONS = {
+  whatsapp: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.57.94.95-3.48-.22-.36A9.43 9.43 0 0 1 2.6 12.05c0-5.2 4.24-9.44 9.46-9.44 2.52 0 4.9.99 6.68 2.77a9.38 9.38 0 0 1 2.76 6.68c0 5.21-4.24 9.44-9.45 9.44zm8.05-17.5A11.32 11.32 0 0 0 12.05.67C5.78.67.67 5.78.67 12.05c0 2 .52 3.96 1.52 5.69L.57 23.33l5.72-1.5a11.36 11.36 0 0 0 5.75 1.47h.01c6.27 0 11.38-5.11 11.38-11.38 0-3.04-1.18-5.9-3.33-8.05z"/></svg>`,
   instagram: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/></svg>`,
   youtube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg>`,
   linkedin: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>`,
@@ -1088,17 +1094,155 @@ $("#services").addEventListener("click", e => {
   selectGenre(b.dataset.genre);
 });
 
+/* ---------- Name dissolves into dust on scroll ----------
+   The name (with its forest fill) is copied into a grid of tiny grains. How far the page has
+   scrolled decides, for every grain, whether it is still in place or drifting away, so scrolling
+   back up puts every grain back exactly where it was. Grains near the bottom let go first, so the
+   name wears away from the bottom up. */
+const dissolve = (() => {
+  const wm = $(".wordmark"), h1 = $("#wordmark");
+  const cv = document.createElement("canvas");
+  cv.className = "dissolve"; cv.setAttribute("aria-hidden", "true");
+  wm.append(cv);
+  const ctx = cv.getContext("2d");
+  const CELL = 2;      // grain size in CSS pixels
+  const LAST = .85;    // the last grain lets go at this progress...
+  const LIFE = .28;    // ...and each grain takes this much progress to drift off and fade
+  let parts = null, src = null, W = 0, H = 0, dpr = 1, progress = 0, building = null;
+
+  const rng = seed => () => (seed = seed * 16807 % 2147483647) / 2147483647;
+  const loadImg = url => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = url; });
+
+  async function build(solid = false) {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = wm.clientWidth; H = wm.clientHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    src = document.createElement("canvas"); src.width = cv.width; src.height = cv.height;
+    const g = src.getContext("2d", { willReadFrequently: true });
+    g.scale(dpr, dpr);
+    const boxes = [];
+    for (const sp of h1.querySelectorAll(".line > span")) {
+      const cs = getComputedStyle(sp), fs = parseFloat(cs.fontSize);
+      // offsets ignore transforms, so this is where the line sits once its entrance has finished
+      const x = h1.offsetLeft + sp.offsetLeft, y = h1.offsetTop + sp.offsetTop, w = sp.offsetWidth, h = sp.offsetHeight;
+      const t = document.createElement("canvas");
+      t.width = Math.ceil(w * dpr); t.height = Math.ceil(h * dpr);
+      const tg = t.getContext("2d"); tg.scale(dpr, dpr);
+      const url = !solid && (cs.backgroundImage.match(/url\("(.*)"\)/) || [])[1];
+      const img = url && await loadImg(url);
+      if (img) {  // the forest, placed like the CSS background, then cut to the letters
+        const bw = 7.4 * fs;
+        tg.drawImage(img, (w - bw) * parseFloat(cs.backgroundPositionX) / 100, 0, bw, h);
+        tg.globalCompositeOperation = "destination-in";
+      } else tg.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--wordmark");
+      tg.font = `${cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+      if ("letterSpacing" in tg) tg.letterSpacing = cs.letterSpacing;
+      const text = cs.textTransform === "uppercase" ? sp.textContent.toUpperCase() : sp.textContent;
+      const m = tg.measureText(text);
+      tg.fillText(text, 0, (h - (m.fontBoundingBoxAscent + m.fontBoundingBoxDescent)) / 2 + m.fontBoundingBoxAscent);
+      g.drawImage(t, x, y, w, h);
+      boxes.push([x, y, w, h]);
+    }
+    let data;
+    try { data = g.getImageData(0, 0, src.width, src.height).data; }
+    catch { return solid ? (parts = []) : build(true); }  // a browser that won't read the forest back: plain letters instead
+
+    const top = Math.min(...boxes.map(b => b[1])), bottom = Math.max(...boxes.map(b => b[1] + b[3]));
+    const r = rng(7), list = [];
+    for (const [bx, by, bw, bh] of boxes)
+      for (let y = by; y < by + bh; y += CELL)
+        for (let x = bx; x < bx + bw; x += CELL) {
+          // any ink in the cell makes a grain (even a faint edge), so nothing is left behind
+          let i = 0, best = 0;
+          for (let py = Math.floor(y * dpr), ey = Math.ceil((y + CELL) * dpr); py < ey; py++)
+            for (let px = Math.floor(x * dpr), ex = Math.ceil((x + CELL) * dpr); px < ex; px++) {
+              const j = (py * src.width + px) * 4;
+              if (data[j + 3] > best) { best = data[j + 3]; i = j; }
+            }
+          if (best < 6) continue;
+          const up = (bottom - y) / (bottom - top);  // 0 at the bottom of the name, 1 at the top
+          list.push({
+            x, y, c: data[i], a: best / 255,
+            t: up * (LAST - .25) + r() * .25,        // when it lets go
+            vx: .35 + r() * .9, vy: -(.12 + r() * .7), w: r() * 6.3,
+            s: r() < .12 ? CELL * 1.7 : CELL * (.55 + r() * .6),
+          });
+        }
+    parts = list;
+  }
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(src, 0, 0, W, H);
+    // Cut the loose grains out of the intact letters...
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    const buckets = new Map(), reach = Math.max(W, H) * .55;
+    for (const p of parts) {
+      const d = progress - p.t;
+      if (d <= 0) continue;
+      ctx.rect(p.x - .5, p.y - .5, CELL + 1, CELL + 1);  // a little oversized, so no hairline seams stay behind
+      const life = d / LIFE;
+      if (life >= 1) continue;
+      const k = d * reach;
+      const x = p.x + p.vx * k + Math.sin(p.w + life * 6) * 4 * life;
+      const y = p.y + p.vy * k - life * life * 30;
+      const alpha = p.a * (1 - life);
+      // ...and batch the drifting ones by shade and opacity, so drawing stays cheap
+      const key = (p.c >> 3) * 16 + Math.min(15, (alpha * 16) | 0);
+      let b = buckets.get(key);
+      if (!b) buckets.set(key, b = []);
+      b.push(x, y, p.s * (1 - life * .5));
+    }
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    for (const [key, b] of buckets) {
+      const c = (key >> 4) * 8 + 4;
+      ctx.fillStyle = `rgb(${c},${c},${c})`;
+      ctx.globalAlpha = ((key & 15) + .5) / 16;
+      ctx.beginPath();
+      for (let i = 0; i < b.length; i += 3) ctx.rect(b[i], b[i + 1], b[i + 2], b[i + 2]);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    const on = progress > .002 && parts, gone = progress >= LAST + LIFE;
+    h1.style.opacity = on ? 0 : "";  // invisible, but screen readers still read the name
+    cv.style.display = on && !gone ? "block" : "none";
+    if (on && !gone) draw();
+  }
+  function rebuild() {
+    parts = null;
+    building = (building || Promise.resolve()).then(() => document.fonts.ready).then(() => build()).then(() => { building = null; render(); });
+  }
+
+  // Rebuild when the look changes: theme or window size
+  new MutationObserver(rebuild).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  addEventListener("resize", rebuild);
+  rebuild();
+
+  // f: 0 = whole name, 1 = completely gone
+  return { set(f) { progress = Math.max(0, f) * (LAST + LIFE); render(); } };
+})();
+
 /* ---------- Parallax + wordmark fade ---------- */
-const word = $(".wordmark"); // name + leopard fade together
+const word = $(".wordmark");
+const cats = [$(".leopard"), $(".panther")];
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let ticking = false;
 
 function onScroll() {
   const y = scrollY, vh = innerHeight;
-  // Name and leopard dim and shrink slightly as photos pass over it, then hides behind the about section.
+  // The cats dim and everything shrinks slightly as photos pass over, then hides behind the about section.
   const t = Math.min(y / vh, 1);
-  word.style.opacity = 1 - t * 0.82;
+  cats.forEach(c => c.style.opacity = 1 - t * 0.82);
   word.style.transform = `scale(${1 - t * 0.06})`;
+  // The name turns to dust gradually, gone by the time three-quarters of the page has been scrolled
+  dissolve.set(y / ((document.documentElement.scrollHeight - vh) * .75));
   document.body.classList.toggle("scrolled", y > vh * 0.6);
 
   if (!reduceMotion) {
