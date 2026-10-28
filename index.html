@@ -494,6 +494,17 @@
     box-shadow: 0 0 0 0 currentColor; animation: pulse 2.4s infinite;
   }
   @keyframes pulse { 70% { box-shadow: 0 0 0 7px transparent; } }
+  /* Portfolio PDF download: an outlined pill that picks up the accent on hover */
+  .download .dl {
+    margin-top: 14px; display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 22px; border-radius: 999px; border: 1px solid var(--line);
+    font-size: 16px; font-weight: 500;
+    transition: border-color .3s var(--ease), color .3s var(--ease), transform .3s var(--ease);
+  }
+  .download .dl:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+  .download .dl-alt { margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .download .dl-alt a { text-decoration: underline; text-underline-offset: 3px; }
+  .download .dl-alt a:hover { color: var(--fg); }
   .elsewhere ul { margin-top: 14px; list-style: none; }
   .elsewhere a {
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -680,6 +691,15 @@
             <a class="mail" id="mail" target="_blank" rel="noopener"></a>
             <p class="city" id="city"></p>
             <p class="status" id="status"></p>
+          </div>
+          <div class="download">
+            <span class="label">Portfolio</span>
+            <a class="dl" id="dl-pdf" href="downloads/Keshav-Reddy-Portfolio-Desktop.pdf" download>
+              Download portfolio PDF <span aria-hidden="true">&#8595;</span></a>
+            <p class="dl-alt">
+              <a href="downloads/Keshav-Reddy-Portfolio-Desktop.pdf" download>Desktop</a> ·
+              <a href="downloads/Keshav-Reddy-Portfolio-Mobile.pdf" download>Mobile</a> version
+            </p>
           </div>
           <div class="elsewhere">
             <span class="label">Elsewhere</span>
@@ -872,6 +892,8 @@ const gmailCompose = (subject = "", body = "") =>
 
 $("#mail").textContent = SITE.email;
 $("#mail").href = gmailCompose();
+// Phones get the tall, phone-shaped version of the portfolio PDF
+if (matchMedia("(max-width: 760px)").matches) $("#dl-pdf").href = "downloads/Keshav-Reddy-Portfolio-Mobile.pdf";
 $("#city").textContent = SITE.location;
 $("#status").textContent = SITE.status;
 

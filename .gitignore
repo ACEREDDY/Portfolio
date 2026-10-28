@@ -5,3 +5,6 @@
 preview/
 preview-*.html
 fonts/Anurati.otf
+
+# Portfolio PDFs (built locally, not part of the site)
+portfolio-pdf/
