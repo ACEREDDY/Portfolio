@@ -99,8 +99,7 @@
   /* Theme switch: a frosted glass pill with the sun on the left and the moon on the right. A glass lens
      sits over the active mode and shows its icon bright; clicking slides it across. */
   .theme-btn {
-    /* top-right, just left of the menu button and level with it (the menu button is 44px tall at top 24px) */
-    position: fixed; top: 29px; right: calc(var(--gutter) + 56px); z-index: 60;
+    position: fixed; bottom: clamp(24px, 4vw, 48px); left: clamp(24px, 4vw, 48px); z-index: 60;
     width: 68px; height: 34px; border-radius: 999px;
     background: var(--glass-bg); border: 1px solid var(--glass-edge); color: var(--muted);
     -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
@@ -111,11 +110,13 @@
   .theme-btn:hover { color: var(--fg); }
   /* Slides away while scrolling down through the photos; back on any scroll up (or the menu, or keyboard focus) */
   body.theme-away:not(.menu-open) .theme-btn:not(:focus-visible) {
-    transform: translateY(-150%); opacity: 0; pointer-events: none;
+    transform: translateY(150%); opacity: 0; pointer-events: none;
   }
   .tt-icon { position: absolute; top: 50%; width: 16px; height: 16px; margin-top: -8px; }
   .tt-icon svg { display: block; width: 100%; height: 100%; }
   .theme-btn > .tt-sun { left: 9px; }
+  :root[data-theme="light"] .theme-btn > .tt-sun { color: #4f4f4c; }
+  :root[data-theme="light"] .theme-btn:hover > .tt-sun { color: var(--fg); }
   .theme-btn > .tt-moon { right: 9px; }
   .tt-lens {
     position: absolute; top: -3px; left: -3px; width: 38px; height: 38px; border-radius: 50%; overflow: hidden;
@@ -631,7 +632,10 @@
     .topics { border-radius: 20px; }
     .menu-btn { top: 14px; }
     .logo-small { top: 21px; }
-    .theme-btn { top: 19px; }
+    .theme-btn {
+      left: calc(20px + env(safe-area-inset-left, 0px));
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   /* ---------- Opening screen ----------
