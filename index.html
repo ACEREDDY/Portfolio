@@ -96,12 +96,27 @@
   body.menu-open .menu-btn span { transform: translateY(0) rotate(45deg); }
   body.menu-open .menu-btn span::before { transform: translateY(-6px) rotate(-90deg); }
 
+  /* Theme switch: the icon plus a label naming the mode it switches to, so it's clear what it does */
   .theme-btn {
     position: fixed; left: var(--gutter); bottom: 24px; z-index: 60;
-    width: 44px; height: 44px; display: grid; place-items: center;
+    height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 12px;
     mix-blend-mode: difference; color: #fff;
   }
-  .theme-btn svg { width: 20px; height: 20px; transition: transform .6s var(--ease); }
+  .theme-btn svg { width: 20px; height: 20px; flex: none; transition: transform .6s var(--ease); }
+  .theme-label {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    opacity: .8; transition: opacity .3s var(--ease);
+  }
+  .theme-btn:hover .theme-label { opacity: 1; }
+  @media (max-width: 420px) { .theme-word { display: none; } }  /* just "Light" / "Dark" beside the Scroll hint on phones */
+  /* The once-per-visit nudge: rings pulse out from the icon */
+  .theme-btn::before {
+    content: ""; position: absolute; left: 2px; top: 2px; width: 40px; height: 40px;
+    border-radius: 50%; border: 1px solid currentColor; opacity: 0; pointer-events: none;
+  }
+  .theme-btn.nudge::before { animation: theme-ping 1.5s cubic-bezier(.22, 1, .36, 1) 3; }
+  .theme-btn.nudge .theme-label { opacity: 1; }
+  @keyframes theme-ping { from { transform: scale(.5); opacity: .9; } to { transform: scale(1.45); opacity: 0; } }
   :root[data-theme="light"] .theme-btn svg { transform: rotate(180deg); }
 
   .logo-small {
@@ -664,7 +679,14 @@
 </style>
 <script>
   // Decided before the page paints, so neither the theme nor the opening screen flashes
-  try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+  // Each visit opens in light or dark at random (the leopard or the panther); if the visitor switches,
+  // their choice is kept for the rest of that visit
+  let theme; try { theme = sessionStorage.getItem("theme"); } catch {}
+  if (theme !== "light" && theme !== "dark") {
+    theme = Math.random() < .5 ? "light" : "dark";
+    try { sessionStorage.setItem("theme", theme); } catch {}
+  }
+  document.documentElement.dataset.theme = theme;
   try { if (!sessionStorage.getItem("introSeen")) document.documentElement.classList.add("intro-on"); }
   catch { document.documentElement.classList.add("intro-on"); }
 </script>
@@ -685,11 +707,12 @@
 
   <button class="menu-btn" aria-label="Open menu" aria-expanded="false"><span></span></button>
 
-  <button class="theme-btn" aria-label="Toggle light and dark theme">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <button class="theme-btn" aria-label="Switch between light and dark mode">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
       <circle cx="12" cy="12" r="9"/>
       <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>
     </svg>
+    <span class="theme-label" aria-hidden="true"><span class="theme-mode"></span><span class="theme-word"> mode</span></span>
   </button>
 
   <div class="wordmark">
@@ -1497,13 +1520,30 @@ menuBtn.addEventListener("click", () => setMenu(!document.body.classList.contain
 document.querySelectorAll("[data-close]").forEach(a => a.addEventListener("click", () => setMenu(false)));
 
 /* ---------- Theme ---------- */
-const root = document.documentElement;
-try { const saved = localStorage.getItem("theme"); if (saved) root.dataset.theme = saved; } catch {}
-$(".theme-btn").addEventListener("click", () => {
+// The theme itself is picked in <head> (at random for each visit); this is the switch
+const root = document.documentElement, themeBtn = $(".theme-btn");
+const labelTheme = () => {
+  const other = root.dataset.theme === "light" ? "Dark" : "Light";
+  $(".theme-mode").textContent = other;
+  themeBtn.setAttribute("aria-label", `Switch to ${other.toLowerCase()} mode`);
+};
+labelTheme();
+themeBtn.addEventListener("click", () => {
   const next = root.dataset.theme === "light" ? "dark" : "light";
   root.dataset.theme = next;
-  try { localStorage.setItem("theme", next); } catch {}
+  labelTheme();
+  try { sessionStorage.setItem("theme", next); } catch {}
 });
+// Once per visit a soft pulse draws the eye to the switch, after the opening screen if it's showing
+try {
+  if (!sessionStorage.getItem("themeNudged")) {
+    sessionStorage.setItem("themeNudged", "1");
+    setTimeout(() => {
+      themeBtn.classList.add("nudge");
+      setTimeout(() => themeBtn.classList.remove("nudge"), 4600);
+    }, root.classList.contains("intro-on") ? 3800 : 1200);
+  }
+} catch {}
 
 /* ---------- Lightbox ---------- */
 const lb = $(".lightbox");
