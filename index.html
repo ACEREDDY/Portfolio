@@ -596,13 +596,90 @@
     .theme-btn { bottom: 14px; }
   }
 
+  /* ---------- Opening screen ----------
+     The KR mark, then the name letter by letter, then the screen lifts like a curtain onto the site.
+     Shown once per visit (the script in <head> decides before anything paints). */
+  .intro { display: none; }
+  .intro-on .intro {
+    position: fixed; inset: 0; z-index: 200;
+    display: grid; place-items: center; padding: 0 var(--gutter);
+    background: var(--bg); color: var(--fg); cursor: pointer;
+    transition: transform 1s cubic-bezier(.76, 0, .24, 1);
+  }
+  .intro-inner {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    transition: opacity .5s var(--ease), transform .9s cubic-bezier(.76, 0, .24, 1);
+  }
+  .intro-mark {
+    width: 104px; height: 104px; border-radius: 23px;
+    box-shadow: 0 0 0 1px var(--line), 0 22px 50px rgba(0,0,0,.45);
+    animation: intro-mark 1s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  @keyframes intro-mark { from { opacity: 0; transform: translateY(12px) scale(.84); filter: blur(6px); } }
+  .intro-name {
+    margin-top: 36px; white-space: nowrap;
+    font-family: "Dune Rise", "Syne", sans-serif; font-size: clamp(26px, 5.4vw, 64px); line-height: 1;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .intro-name span {
+    display: inline-block;
+    animation: intro-letter .8s cubic-bezier(.22, 1, .36, 1) both;
+    animation-delay: calc(.4s + var(--i) * 45ms);
+  }
+  @keyframes intro-letter { from { opacity: 0; transform: translateY(.5em); filter: blur(8px); } }
+  .intro-studios {
+    margin-top: 1em; font-family: "Dune Rise", "Syne", sans-serif; font-size: clamp(11px, 1.5vw, 17px);
+    letter-spacing: .7em; padding-left: .7em; text-transform: uppercase; color: var(--muted);
+    animation: intro-fade .8s 1.15s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  .intro-line {
+    margin-top: 26px; font-family: var(--mono); font-size: clamp(9.5px, 2.6vw, 12px); letter-spacing: .18em;
+    text-transform: uppercase; white-space: nowrap;  /* one line, even on a phone */
+    color: var(--muted); animation: intro-fade .8s 1.35s cubic-bezier(.22, 1, .36, 1) both;
+  }
+  @keyframes intro-fade { from { opacity: 0; transform: translateY(8px); } }
+  .intro-bar {
+    position: absolute; left: 50%; bottom: 12vh; width: 140px; height: 1px; translate: -50% 0;
+    background: var(--line);
+  }
+  /* The accent fills the line with a neon glow: red in dark mode, blue in light mode */
+  .intro-bar::after {
+    content: ""; position: absolute; inset: 0; background: var(--accent); transform-origin: left;
+    box-shadow: 0 0 8px var(--accent), 0 0 18px color-mix(in srgb, var(--accent) 60%, transparent);
+    animation: intro-bar 2.3s var(--ease) both;
+  }
+  @keyframes intro-bar { from { transform: scale(0, 1); } }
+  /* Leaving: the screen slides up while its contents drift up and fade */
+  .intro-leaving .intro { transform: translateY(-100%); }
+  .intro-leaving .intro-inner { opacity: 0; transform: translateY(-50px); }
+  /* While it's up the page can't scroll, and the hero holds its entrance until the curtain lifts */
+  html.intro-on:not(.intro-leaving) { overflow: hidden; }
+  .intro-on:not(.intro-leaving) .wordmark h1 .line > span,
+  .intro-on:not(.intro-leaving) .cat-intro { animation-play-state: paused; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
     .shot { transform: none !important; }
   }
 </style>
+<script>
+  // Decided before the page paints, so neither the theme nor the opening screen flashes
+  try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch {}
+  try { if (!sessionStorage.getItem("introSeen")) document.documentElement.classList.add("intro-on"); }
+  catch { document.documentElement.classList.add("intro-on"); }
+</script>
 </head>
 <body>
+
+  <div class="intro" aria-hidden="true">
+    <div class="intro-inner">
+      <img class="intro-mark" src="favicon.svg" alt="">
+      <div class="intro-name"><span style="--i:0">K</span><span style="--i:1">E</span><span style="--i:2">S</span><span style="--i:3">H</span><span style="--i:4">A</span><span style="--i:5">V</span>&nbsp;<span style="--i:6">R</span><span style="--i:7">E</span><span style="--i:8">D</span><span style="--i:9">D</span><span style="--i:10">Y</span></div>
+      <div class="intro-studios">Studios</div>
+      <div class="intro-line">Wildlife photographer · Hyderabad, India</div>
+    </div>
+    <div class="intro-bar"></div>
+  </div>
 
   <a class="logo-small" href="#" aria-label="Back to top"></a>
 
@@ -820,6 +897,25 @@ const SITE = {
 
 /* ---------- Render ---------- */
 const $ = (s, el = document) => el.querySelector(s);
+
+/* ---------- Opening screen ---------- */
+{
+  const root = document.documentElement, intro = $(".intro");
+  if (root.classList.contains("intro-on")) {
+    let left = false;
+    const leave = () => {
+      if (left) return;
+      left = true;
+      try { sessionStorage.setItem("introSeen", "1"); } catch {}
+      root.classList.add("intro-leaving");  // curtain lifts; the hero starts its entrance underneath
+      setTimeout(() => { intro.remove(); root.classList.remove("intro-on", "intro-leaving"); }, 1100);
+    };
+    const quick = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(leave, quick ? 700 : 2500);
+    intro.addEventListener("click", leave);           // a tap skips it
+    addEventListener("keydown", leave, { once: true }); // so does any key
+  } else intro.remove();
+}
 const fullName = `${SITE.firstName} ${SITE.lastName}`;
 document.title = `${fullName} Studios`;
 
