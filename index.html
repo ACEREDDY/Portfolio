@@ -1196,16 +1196,17 @@ const dissolve = (() => {
   const CELL = 2;      // grain size in CSS pixels
   const LAST = .85;    // the last grain lets go at this progress...
   const LIFE = .28;    // ...and each grain takes this much progress to drift off and fade
-  let parts = null, src = null, W = 0, H = 0, dpr = 1, progress = 0, building = null;
+  let parts = null, cur = null, progress = 0, building = null;  // cur: the copy being shown { dpr, W, H, src }
 
   const rng = seed => () => (seed = seed * 16807 % 2147483647) / 2147483647;
   const loadImg = url => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = url; });
 
+  // Builds a fresh copy off to the side and only swaps it in at the end, so the dust on screen (or the
+  // hidden name) stays exactly as it is while a rebuild runs, e.g. when a phone's address bar slides away
   async function build(solid = false) {
-    dpr = Math.min(devicePixelRatio || 1, 2);
-    W = wm.clientWidth; H = wm.clientHeight;
-    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    src = document.createElement("canvas"); src.width = cv.width; src.height = cv.height;
+    const dpr = Math.min(devicePixelRatio || 1, 2), w0 = wm.clientWidth, h0 = wm.clientHeight;
+    const src = document.createElement("canvas");
+    src.width = Math.round(w0 * dpr); src.height = Math.round(h0 * dpr);
     const g = src.getContext("2d", { willReadFrequently: true });
     g.scale(dpr, dpr);
     const boxes = [];
@@ -1256,10 +1257,14 @@ const dissolve = (() => {
             s: r() < .12 ? CELL * 1.7 : CELL * (.55 + r() * .6),
           });
         }
+    // swap in the new copy all at once
+    cur = { dpr, W: w0, H: h0, src };
+    cv.width = src.width; cv.height = src.height;
     parts = list;
   }
 
   function draw() {
+    const { dpr, W, H, src } = cur;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, W, H);
@@ -1298,20 +1303,23 @@ const dissolve = (() => {
   }
 
   function render() {
-    const on = progress > .002 && parts, gone = progress >= LAST + LIFE;
+    const on = progress > .002 && parts && cur, gone = progress >= LAST + LIFE;
     h1.style.opacity = on ? 0 : "";  // invisible, but screen readers still read the name
     cv.style.display = on && !gone ? "block" : "none";
     if (on && !gone) draw();
   }
   function rebuild() {
-    parts = null;
-    if (!isPhone()) { progress = 0; render(); return; }  // not used on bigger screens, so skip the work
+    // not used on bigger screens, so skip the work there
+    if (!isPhone()) { parts = cur = null; progress = 0; render(); return; }
+    // the copy on screen stays in place until the new one is ready (see build)
     building = (building || Promise.resolve()).then(() => document.fonts.ready).then(() => build()).then(() => { building = null; render(); });
   }
 
-  // Rebuild when the look changes: theme or window size
+  // Rebuild when the look changes: theme or window size. Phones resize constantly while scrolling (the
+  // address bar slides in and out), so wait until the resizing settles.
   new MutationObserver(rebuild).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  addEventListener("resize", rebuild);
+  let resizeWait;
+  addEventListener("resize", () => { clearTimeout(resizeWait); resizeWait = setTimeout(rebuild, 150); });
   rebuild();
 
   // f: 0 = whole name, 1 = completely gone
