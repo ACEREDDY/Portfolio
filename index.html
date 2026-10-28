@@ -117,6 +117,8 @@
     font-size: 8px; letter-spacing: .7em; padding-left: .7em;  /* the padding re-centers the trailing space */
   }
   body.scrolled .logo-small { opacity: 1; }
+  /* Out of the way over the contact section, where it would sit on top of the big heading */
+  body.at-contact .logo-small { opacity: 0; pointer-events: none; }
 
   /* ---------- Hero wordmark ---------- */
   .wordmark {
@@ -353,16 +355,33 @@
      The bar is frosted glass; the selected option sits under a glass "lens" that slides (and can be
      dragged) between options. The lens blurs what is under it and shows the label slightly magnified
      in the accent color, like looking through a droplet. */
+  /* Edge shine: as the lens nears either end of the bar, light catches the curved glass there.
+     --shine (0 in the middle, 1 at the very ends) and --shine-x (where the lens is) are set by the script;
+     registering them lets them glide along with the lens instead of jumping. */
+  @property --shine { syntax: "<number>"; inherits: true; initial-value: 0; }
+  @property --shine-x { syntax: "<length>"; inherits: true; initial-value: 0px; }
+  @property --shine-top { syntax: "<length>"; inherits: true; initial-value: 0px; }     /* the lens's row, */
+  @property --shine-bottom { syntax: "<length>"; inherits: true; initial-value: 0px; }  /* for bars that wrap */
+  @property --lens-shine-x { syntax: "<percentage>"; inherits: true; initial-value: 50%; }
   .topics.glass {
     position: relative; isolation: isolate;
     /* Corner roundness = half an option's height + padding + border: a one-line bar is a pill, and a bar that
        wraps onto several lines becomes a rounded rectangle whose corners still fit the lens */
     border-radius: calc(var(--row-h, 40px) / 2 + 6px);
     -webkit-user-select: none; user-select: none;  /* dragging the lens shouldn't highlight the labels */
-    background: var(--glass-bg); border-color: var(--glass-edge);
+    background-color: var(--glass-bg); border-color: var(--glass-edge);
+    background-image:  /* a soft glint on the top rim, and a fainter one on the bottom, near the lens */
+      radial-gradient(70px 34px at var(--shine-x) var(--shine-top), rgb(255 255 255 / calc(var(--shine) * .38)), transparent 70%),
+      radial-gradient(56px 24px at var(--shine-x) var(--shine-bottom), rgb(255 255 255 / calc(var(--shine) * .14)), transparent 70%);
     -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
     box-shadow: inset 0 1px 0 var(--glass-hi), 0 12px 32px var(--glass-drop), 0 2px 6px var(--glass-drop);
-    transition: background .5s var(--ease), border-color .5s var(--ease), box-shadow .5s var(--ease);
+    transition: background-color .5s var(--ease), border-color .5s var(--ease), box-shadow .5s var(--ease),
+                --shine .6s var(--ease), --shine-x .6s var(--spring), --lens-shine-x .6s var(--spring),
+                --shine-top .6s var(--spring), --shine-bottom .6s var(--spring);
+  }
+  /* While the lens is held it follows the finger, so the shine does too */
+  .topics.glass.lens-lifted {
+    transition: --shine .2s var(--ease), --shine-x 0s, --lens-shine-x .15s var(--ease), --shine-top 0s, --shine-bottom 0s;
   }
   .topics.glass button,
   .topics.glass button[aria-pressed="true"] {
@@ -388,6 +407,11 @@
     will-change: transform;
   }
   .glass-lens.moving { scale: 1.07 .93; }  /* a little squash while it travels after a click */
+  /* The lens catches the same light on the side facing the bar's end */
+  .glass-lens::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(60% 90% at var(--lens-shine-x) 0%, rgb(255 255 255 / calc(var(--shine) * .3)), transparent 70%);
+  }
   /* Pressed / dragged: the lens lifts off the bar like a picked-up droplet: bigger, milkier, brighter
      rim, a faint accent glow, and stronger magnification. It keeps one size and glides freely. */
   .glass-lens.lifted {
@@ -896,7 +920,20 @@ function glassify(bar, { contain = false } = {}) {  // contain: keep the lifted 
     content.style.left = -x + "px";
     content.style.top = -y + "px";
     content.style.transformOrigin = `${x + w / 2}px ${y + h / 2}px`;
+    shine();
   }
+  // Edge shine: none while the lens is in the middle part of the bar, growing as it reaches either end
+  function shine() {
+    const cx = pos.x + pos.w / 2 - bar.scrollLeft;  // where the lens shows within the visible bar
+    const u = Math.min(Math.max(cx / bar.clientWidth, 0), 1);
+    const side = Math.abs(u - .5) * 2;
+    bar.style.setProperty("--shine", Math.min(Math.max((side - .3) / .7, 0), 1).toFixed(3));
+    bar.style.setProperty("--shine-x", cx.toFixed(1) + "px");
+    bar.style.setProperty("--shine-top", Math.max(pos.y - 5, 0).toFixed(1) + "px");  // the rim just above the lens's row
+    bar.style.setProperty("--shine-bottom", Math.min(pos.y + pos.h + 5, bar.clientHeight).toFixed(1) + "px");
+    bar.style.setProperty("--lens-shine-x", (50 + (u - .5) * 80).toFixed(1) + "%");
+  }
+  bar.addEventListener("scroll", shine, { passive: true });  // a sideways-scrolling bar moves the lens on screen
   function toActive(animate = true) {
     const b = bar.querySelector('[aria-pressed="true"]');
     if (!b) return;
@@ -1098,7 +1135,8 @@ $("#services").addEventListener("click", e => {
    The name (with its forest fill) is copied into a grid of tiny grains. How far the page has
    scrolled decides, for every grain, whether it is still in place or drifting away, so scrolling
    back up puts every grain back exactly where it was. Grains near the bottom let go first, so the
-   name wears away from the bottom up. */
+   name wears away from the bottom up. Phones only; on bigger screens the name fades with the cats. */
+const isPhone = () => innerWidth < 760;
 const dissolve = (() => {
   const wm = $(".wordmark"), h1 = $("#wordmark");
   const cv = document.createElement("canvas");
@@ -1217,6 +1255,7 @@ const dissolve = (() => {
   }
   function rebuild() {
     parts = null;
+    if (!isPhone()) { progress = 0; render(); return; }  // not used on bigger screens, so skip the work
     building = (building || Promise.resolve()).then(() => document.fonts.ready).then(() => build()).then(() => { building = null; render(); });
   }
 
@@ -1232,18 +1271,29 @@ const dissolve = (() => {
 /* ---------- Parallax + wordmark fade ---------- */
 const word = $(".wordmark");
 const cats = [$(".leopard"), $(".panther")];
+const contact = $("#contact");
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let ticking = false;
 
 function onScroll() {
   const y = scrollY, vh = innerHeight;
-  // The cats dim and everything shrinks slightly as photos pass over, then hides behind the about section.
+  // Name and cats dim and shrink slightly as photos pass over, then hide behind the about section.
   const t = Math.min(y / vh, 1);
-  cats.forEach(c => c.style.opacity = 1 - t * 0.82);
   word.style.transform = `scale(${1 - t * 0.06})`;
-  // The name turns to dust gradually, gone by the time three-quarters of the page has been scrolled
-  dissolve.set(y / ((document.documentElement.scrollHeight - vh) * .75));
+  if (isPhone()) {
+    // Phones: only the cats dim; the name turns to dust, gone by three-quarters of the way down the page
+    word.style.opacity = "";
+    cats.forEach(c => c.style.opacity = 1 - t * 0.82);
+    dissolve.set(y / ((document.documentElement.scrollHeight - vh) * .75));
+  } else {
+    word.style.opacity = 1 - t * 0.82;
+    cats.forEach(c => c.style.opacity = "");
+    dissolve.set(0);
+  }
   document.body.classList.toggle("scrolled", y > vh * 0.6);
+  // Hide the top-left name once the contact section reaches it (a little before, so they never touch)
+  const c = contact.getBoundingClientRect();
+  document.body.classList.toggle("at-contact", c.top < 120 && c.bottom > 0);
 
   if (!reduceMotion) {
     // Speeds are kept small (and halved on phones) so drifting photos never close the gap between rows.
