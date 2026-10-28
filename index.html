@@ -263,6 +263,9 @@
     grid-column: var(--col);
     will-change: transform;
   }
+  /* Staggered genres: the script places each photo (see placeStaggered), so none sit side by side in pairs */
+  .gallery.stagger { display: block; }
+  .gallery.stagger .shot { position: absolute; margin-top: 0; }
   .shot figure {
     position: relative; overflow: hidden; border-radius: 3px;
     aspect-ratio: var(--ratio, 4/5); background: #1c1c1e; cursor: zoom-in;
@@ -767,7 +770,7 @@ const SITE = {
     ["automobile/05.jpg", "Headlight", 1200, 1800], ["automobile/06.jpg", "Tail Glow", 1233, 1800],
     ["automobile/02.jpg", "Gravel Sprint", 1800, 460], ["automobile/10.jpg", "Centre Console", 1273, 1800],
   ] },
-  { id: "street", label: "Street", auto: [
+  { id: "street", label: "Street", stagger: true, auto: [
     ["street/07.jpg", "Pigeon Keeper", 1012, 1800], ["street/02.jpg", "Birds over the Minaret", 1800, 1200],
     ["street/12.jpg", "Evening Rush", 1200, 1800], ["street/06.jpg", "Bazaar Gold", 1198, 1800],
     ["street/05.jpg", "Carved Arches", 1800, 1200], ["street/03.jpg", "Copper Dome", 1200, 1800],
@@ -775,13 +778,13 @@ const SITE = {
     ["street/04.jpg", "Balcony & Wire", 1200, 1800], ["street/09.jpg", "Old Dome", 1200, 1800],
     ["street/15.jpg", "Platform 236", 1201, 1800], ["street/14.jpg", "Afternoon Bazaar", 1800, 1200],
   ] },
-  { id: "product", label: "Product", auto: [
+  { id: "product", label: "Product", stagger: true, auto: [
     ["product/06.jpg", "Winter Edition", 1186, 1800], ["product/04.jpg", "Predator Gold", 1248, 1800],
     ["product/01.jpg", "Antiquity Blue", 1440, 1800], ["product/07.jpg", "Raised High", 1215, 1800],
     ["product/08.jpg", "Blue Burst", 1200, 1800], ["product/02.jpg", "Royal Challenge", 1440, 1800],
     ["product/03.jpg", "On Ice", 1277, 1800], ["product/05.jpg", "Cold Grip", 1090, 1800],
   ] },
-  { id: "model", label: "Model", auto: [
+  { id: "model", label: "Model", stagger: true, auto: [
     ["model/04.jpg", "Showtime", 1521, 1800], ["model/17.jpg", "Tip of the Hat", 1010, 1800],
     ["model/13.jpg", "Emerald Gown", 1279, 1800], ["model/01.jpg", "Main Stage", 1800, 941],
     ["model/08.jpg", "Confetti", 1281, 1800], ["model/10.jpg", "Colours of Holi", 1200, 1800],
@@ -1049,7 +1052,24 @@ function autoLayout(list, label) {
   return out.map((p, k) => ({ ...p, client: label,
     colM: p.w >= 6 ? "1 / 7" : k % 2 ? "3 / 7" : "1 / 5" }));
 }
-const GENRES = SITE.genres.map(g => ({ ...g, photos: g.photos || autoLayout(g.auto, g.label) }));
+/* Staggered layout: one photo at a time, alternating left and right with varied sizes. Where each one
+   sits vertically is worked out once the page knows the photo sizes (placeStaggered). */
+function staggerLayout(list, label) {
+  const span = r => r > 2 ? 7 : r > 1.2 ? 6 : r > 0.75 ? 5 : 4;
+  const vary = [0, 1, 0, -1, 1, 0];
+  return list.map(([file, title, w, h], i) => {
+    const s = Math.min(7, Math.max(3, span(w / h) + vary[i % vary.length]));
+    const left = i % 2 === 0, step = Math.floor(i / 2) % 5;
+    return {
+      src: "photos/" + file, title, client: label, ratio: `${w}/${h}`,
+      span: s, start: left ? [0, 1, 2, 1, 0][step] : 12 - s - [0, 1, 0, 2, 1][step],  // 0-based column
+      speed: left ? 0.04 : 0.02,
+      colM: s >= 6 ? "1 / 7" : i % 2 ? "3 / 7" : "1 / 5",
+    };
+  });
+}
+const GENRES = SITE.genres.map(g => ({ ...g,
+  photos: g.photos || (g.stagger ? staggerLayout(g.auto, g.label) : autoLayout(g.auto, g.label)) }));
 
 /* ---------- Reveal on scroll ---------- */
 const io = new IntersectionObserver(entries => {
@@ -1085,7 +1105,42 @@ function renderGallery(genre) {
     </div>`).join("");
   shots = [...gallery.querySelectorAll(".shot")];
   shots.forEach(s => io.observe(s));
+  staggered = !!genre.stagger;
+  placeStaggered();
 }
+
+// Staggered genres on bigger screens: each photo goes below anything already in its columns, and always
+// starts partway down the photo before it, so no two are ever level. Phones keep the simple column.
+let staggered = false;
+function placeStaggered() {
+  const on = staggered && !matchMedia("(max-width: 760px)").matches;
+  gallery.classList.toggle("stagger", on);
+  if (!on) {
+    gallery.style.height = "";
+    shots.forEach(s => { s.style.left = s.style.top = s.style.width = ""; });
+    return;
+  }
+  const cs = getComputedStyle(gallery), vh = innerHeight;
+  const pad = parseFloat(cs.paddingLeft), gap = parseFloat(cs.columnGap);
+  const col = (gallery.clientWidth - 2 * pad - 11 * gap) / 12;
+  shots.forEach((s, i) => {
+    const p = photos[i];
+    s.style.left = pad + p.start * (col + gap) + "px";
+    s.style.width = p.span * col + (p.span - 1) * gap + "px";
+  });
+  const placed = [];
+  shots.forEach((s, i) => {
+    const p = photos[i], x0 = p.start, x1 = p.start + p.span, h = s.offsetHeight;
+    let top = 0;
+    for (const q of placed) if (q.x0 < x1 && x0 < q.x1) top = Math.max(top, q.bottom + vh * .12);  // clear of photos above it
+    const prev = placed[placed.length - 1];
+    if (prev) top = Math.max(top, prev.top + Math.max(prev.h * .4, vh * .14));  // never level with the one before
+    s.style.top = top + "px";
+    placed.push({ x0, x1, top, h, bottom: top + h });
+  });
+  gallery.style.height = Math.max(...placed.map(q => q.bottom)) + parseFloat(cs.paddingBottom) + "px";
+}
+addEventListener("resize", placeStaggered);
 
 /* ---------- Genre switcher ---------- */
 const genreBar = $("#genres");
