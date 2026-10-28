@@ -1,2 +1,7 @@
 # Local preview settings
 .claude/
+
+# Local font/design previews (not part of the live site)
+preview/
+preview-*.html
+fonts/Anurati.otf
