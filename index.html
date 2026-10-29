@@ -888,29 +888,17 @@ const SITE = {
   /* Gallery genres, in the order of the switcher. Wildlife has a hand-placed layout (col/colM/mt/speed);
      the others just list [file, title, width, height] and get laid out automatically from each photo's shape. */
   genres: [
-  { id: "wildlife", label: "Wildlife", photos: [ // fixed, hand-placed order (add shuffle: true to randomize)
-    { src: "photos/18.jpg", title: "White Tiger",         client: "Wildlife", col: "3 / 6",   colM: "1 / 5", ratio: "2/3",       mt: "0",    speed: 0.05 },
-    { src: "photos/05.jpg", title: "Stripes in Motion",   client: "Wildlife", col: "7 / 13",  colM: "2 / 7", ratio: "16/9",      mt: "10vh", speed: 0.02 },
-    { src: "photos/31.jpg", title: "Black-maned Lion",    client: "Wildlife", col: "1 / 8",   colM: "1 / 7", ratio: "1800/1204", mt: "0",    speed: 0.02 },
-    { src: "photos/14.jpg", title: "Mandrill",            client: "Wildlife", col: "9 / 13",  colM: "3 / 7", ratio: "2/3",       mt: "10vh", speed: 0.05 },
-    { src: "photos/11.jpg", title: "Leopard at Rest",     client: "Wildlife", col: "2 / 6",   colM: "1 / 6", ratio: "1546/1800", mt: "0",    speed: 0.05 },
-    { src: "photos/06.jpg", title: "Giraffes",            client: "Wildlife", col: "7 / 13",  colM: "1 / 7", ratio: "16/9",      mt: "8vh",  speed: 0.02 },
-    { src: "photos/29.jpg", title: "Hippos at the Water", client: "Wildlife", col: "1 / 8",   colM: "1 / 7", ratio: "1765/1177", mt: "0",    speed: 0.02 },
-    { src: "photos/21.jpg", title: "Parakeet",            client: "Wildlife", col: "9 / 12",  colM: "3 / 7", ratio: "2/3",       mt: "12vh", speed: 0.05 },
-    { src: "photos/17.jpg", title: "Great Egret",         client: "Wildlife", col: "1 / 5",   colM: "1 / 5", ratio: "2/3",       mt: "0",    speed: 0.05 },
-    { src: "photos/26.jpg", title: "Leopard Dreaming",    client: "Wildlife", col: "6 / 13",  colM: "1 / 7", ratio: "1800/1140", mt: "10vh", speed: 0.02 },
-    { src: "photos/22.jpg", title: "Hornbill",            client: "Wildlife", col: "2 / 5",   colM: "3 / 7", ratio: "2/3",       mt: "0",    speed: 0.05 },
-    { src: "photos/08.jpg", title: "Kudu",                client: "Wildlife", col: "6 / 13",  colM: "1 / 7", ratio: "16/9",      mt: "14vh", speed: 0.02 },
-    { src: "photos/25.jpg", title: "Lion at Dusk",        client: "Wildlife", col: "1 / 8",   colM: "1 / 7", ratio: "1800/1088", mt: "0",    speed: 0.02 },
-    { src: "photos/19.jpg", title: "Viper",               client: "Wildlife", col: "9 / 13",  colM: "3 / 7", ratio: "2/3",       mt: "8vh",  speed: 0.04 },
-    { src: "photos/12.jpg", title: "Elephant",            client: "Wildlife", col: "2 / 9",   colM: "1 / 7", ratio: "3/2",       mt: "0",    speed: 0.02 },
-    { src: "photos/20.jpg", title: "Tree Snake",          client: "Wildlife", col: "10 / 13", colM: "1 / 5", ratio: "2/3",       mt: "10vh", speed: 0.04 },
-    { src: "photos/28.jpg", title: "Tsessebe",            client: "Wildlife", col: "1 / 7",   colM: "1 / 7", ratio: "1471/981",  mt: "0",    speed: 0.02 },
-    { src: "photos/13.jpg", title: "Langurs",             client: "Wildlife", col: "9 / 12",  colM: "3 / 7", ratio: "2/3",       mt: "12vh", speed: 0.05 },
-    { src: "photos/30.jpg", title: "Kudu Herd",           client: "Wildlife", col: "1 / 7",   colM: "1 / 7", ratio: "1800/1009", mt: "0",    speed: 0.02 },
-    { src: "photos/04.jpg", title: "Vulture",             client: "Wildlife", col: "8 / 13",  colM: "1 / 7", ratio: "16/9",      mt: "12vh", speed: 0.02 },
-    { src: "photos/27.jpg", title: "Leopard on the Log",  client: "Wildlife", col: "4 / 12",  colM: "1 / 7", ratio: "3/2",       mt: "0",    speed: 0.02 },
-    { src: "photos/24.jpg", title: "Last Light",          client: "Wildlife", col: "2 / 10",  colM: "1 / 7", ratio: "1800/1153", mt: "0",    speed: 0.02 },
+  { id: "wildlife", label: "Wildlife", stagger: true, auto: [  // staggered like the other genres; best photos first
+    ["18.jpg", "White Tiger", 2, 3], ["05.jpg", "Stripes in Motion", 16, 9],
+    ["31.jpg", "Black-maned Lion", 1800, 1204], ["14.jpg", "Mandrill", 2, 3],
+    ["11.jpg", "Leopard at Rest", 1546, 1800], ["06.jpg", "Giraffes", 16, 9],
+    ["29.jpg", "Hippos at the Water", 1765, 1177], ["21.jpg", "Parakeet", 2, 3],
+    ["17.jpg", "Great Egret", 2, 3], ["26.jpg", "Leopard Dreaming", 1800, 1140],
+    ["22.jpg", "Hornbill", 2, 3], ["08.jpg", "Kudu", 16, 9],
+    ["25.jpg", "Lion at Dusk", 1800, 1088], ["19.jpg", "Viper", 2, 3],
+    ["12.jpg", "Elephant", 3, 2], ["20.jpg", "Tree Snake", 2, 3],
+    ["30.jpg", "Kudu Herd", 1800, 1009], ["04.jpg", "Vulture", 16, 9],
+    ["27.jpg", "Leopard on the Log", 3, 2], ["24.jpg", "Last Light", 1800, 1153],
   ] },
   /* Fixed order, best photos first. Each line is one row on desktop (two photos side by side). */
   { id: "street", label: "Street", stagger: true, auto: [
