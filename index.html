@@ -706,11 +706,11 @@
 </style>
 <script>
   // Decided before the page paints, so neither the theme nor the opening screen flashes
-  // Each visit opens in light or dark at random (the leopard or the panther); if the visitor switches,
+  // Each visit opens in light or dark at random, dark about 7 times in 10; if the visitor switches,
   // their choice is kept for the rest of that visit
   let theme; try { theme = sessionStorage.getItem("theme"); } catch {}
   if (theme !== "light" && theme !== "dark") {
-    theme = Math.random() < .5 ? "light" : "dark";
+    theme = Math.random() < .7 ? "dark" : "light";
     try { sessionStorage.setItem("theme", theme); } catch {}
   }
   document.documentElement.dataset.theme = theme;
