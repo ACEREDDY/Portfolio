@@ -888,17 +888,17 @@ const SITE = {
   /* Gallery genres, in the order of the switcher. Wildlife has a hand-placed layout (col/colM/mt/speed);
      the others just list [file, title, width, height] and get laid out automatically from each photo's shape. */
   genres: [
-  { id: "wildlife", label: "Wildlife", stagger: true, auto: [  // staggered like the other genres; best photos first
-    ["18.jpg", "White Tiger", 2, 3], ["05.jpg", "Stripes in Motion", 16, 9],
-    ["31.jpg", "Black-maned Lion", 1800, 1204], ["14.jpg", "Mandrill", 2, 3],
-    ["11.jpg", "Leopard at Rest", 1546, 1800], ["06.jpg", "Giraffes", 16, 9],
-    ["29.jpg", "Hippos at the Water", 1765, 1177], ["21.jpg", "Parakeet", 2, 3],
-    ["17.jpg", "Great Egret", 2, 3], ["26.jpg", "Leopard Dreaming", 1800, 1140],
-    ["22.jpg", "Hornbill", 2, 3], ["08.jpg", "Kudu", 16, 9],
-    ["25.jpg", "Lion at Dusk", 1800, 1088], ["19.jpg", "Viper", 2, 3],
-    ["12.jpg", "Elephant", 3, 2], ["20.jpg", "Tree Snake", 2, 3],
-    ["30.jpg", "Kudu Herd", 1800, 1009], ["04.jpg", "Vulture", 16, 9],
-    ["27.jpg", "Leopard on the Log", 3, 2], ["24.jpg", "Last Light", 1800, 1153],
+  { id: "wildlife", label: "Wildlife", stagger: true, auto: [  // staggered like the other genres; ranked best to weakest
+    ["18.jpg", "White Tiger", 2, 3], ["31.jpg", "Black-maned Lion", 1800, 1204],
+    ["26.jpg", "Leopard Dreaming", 1800, 1140], ["14.jpg", "Mandrill", 2, 3],
+    ["05.jpg", "Stripes in Motion", 16, 9], ["25.jpg", "Lion at Dusk", 1800, 1088],
+    ["21.jpg", "Parakeet", 2, 3], ["17.jpg", "Great Egret", 2, 3],
+    ["22.jpg", "Hornbill", 2, 3], ["27.jpg", "Leopard on the Log", 3, 2],  // a strong shot held back for the middle
+    ["29.jpg", "Hippos at the Water", 1765, 1177],
+    ["06.jpg", "Giraffes", 16, 9], ["12.jpg", "Elephant", 3, 2],
+    ["19.jpg", "Viper", 2, 3], ["04.jpg", "Vulture", 16, 9],
+    ["08.jpg", "Kudu", 16, 9], ["30.jpg", "Kudu Herd", 1800, 1009],
+    ["24.jpg", "Last Light", 1800, 1153], ["20.jpg", "Tree Snake", 2, 3],
   ] },
   /* Fixed order, best photos first. Each line is one row on desktop (two photos side by side). */
   { id: "street", label: "Street", stagger: true, auto: [
