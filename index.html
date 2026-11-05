@@ -79,6 +79,8 @@
   a { color: inherit; text-decoration: none; }
   button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
   img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  /* Photos can't be dragged off the page, selected, or saved from the phone's long-press menu */
+  img { -webkit-user-drag: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 
   /* ---------- Fixed chrome ---------- */
   .menu-btn {
@@ -1561,6 +1563,11 @@ try {
     }, root.classList.contains("intro-on") ? 3800 : 1200);
   }
 } catch {}
+
+/* ---------- Photo saving ---------- */
+// No right-click "Save image as…" (or Android's long-press menu) and no dragging photos out of the page
+["contextmenu", "dragstart"].forEach(type =>
+  document.addEventListener(type, e => { if (e.target.closest("img, .shot, .lightbox")) e.preventDefault(); }));
 
 /* ---------- Lightbox ---------- */
 const lb = $(".lightbox");
